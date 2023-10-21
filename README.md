@@ -4,7 +4,7 @@
 
 The indicated requirements of the assignment are in the `phase-1-mvp` branch which targets `main`. Nothing else is added. This includes the main api requirements, testing and containerization.
 
-I've added a few quick wins in a `phase-2-perf` branch (pm2, logging) as well as notes on what else we could do to improve the reliability of the service. You can view the diff here https://github.com/grug-brain/cogent-takehome/compare/phase-1-mvp...phase-2-perf
+I've added a few quick wins in a `phase-2-perf` branch (pm2, logging, added concurrency config in bullmq) as well as notes on what else we could do to improve the reliability of the service. You can view the diff here https://github.com/grug-brain/cogent-takehome/compare/phase-1-mvp...phase-2-perf
 
 ```
 main <- phase-1-mvp <- phase-2-perf
@@ -75,3 +75,29 @@ Bullmq cannot mock redis so the "integration" tests are more on the e2e side, se
 However, of all the queue libs on npm, bullmq pretty much the best so I just went with that instead of wasting too much time trying to figure out how to mock redis at the connection level via https://github.com/moll/node-mitm or something.
 
 If django/celery lets you mock redis, that would probably be a better option for DX. The image processing itself does not occur in the api service so IMO using python or node to host the queue is not that important of a question. Now, if you wanted to do the image processing with ImageMagick or something yourself which I would think is cpu intensive then node (single threaded) would not be a good choice for that.
+
+## Next steps
+
+There is some architectural changes described in the excalidraw files. Mainly, we would want to hold static assets in s3:
+
+- uploading directly to thumbor will be removed in a later version (in general, separation of concerns)
+- if thumbor goes down, then you lose access to the original images too
+- accessing thumbor directly forces you to use the super clunky url format (where you specify the image processing params in the url path itself), this is hard to use and the specific thumbnail dimensions we want (100x100) cannot be canonicalized. Ideally the resulting thumbnail would be accessed via slug like site.com/thumbnails/smile.webp instead of like thumbor.site.com/unsafe/100x100/blah/foo/image/encoded-path-here.
+
+## Other questions
+
+> What would need to change to put your service into production?
+
+Productionizing a docker container is something I don't have a lot of experience with. In real life I'd ask for help from the infra team or with enough time just learn how to provision my own resources in whatever cloud solution you're using. This is actually the ares I want to gain professional experience in the most.
+
+> How could it be scaled up or down?
+
+We can set the number of node clusters with env vars, provision extra resources for node js, etc.
+
+> How will it handle a high load of requests?
+
+We can implement an external load balancer, rate limit the api endpoints (max requests per period, or paid tokens), set limits on the size of the file upload.
+
+> What can you do to monitor and manage your services?
+
+Implement open telemetry

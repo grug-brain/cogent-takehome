@@ -9,6 +9,10 @@ const schema = z.object({
   thumborHost: z.string().default("thumbor"),
   thumborPort: zodNumber.default("80"),
   tornadoHost: z.string().default("127.0.0.1"),
+  workerConcurrency: zodNumber.default("5"),
+  jobAttempts: zodNumber.default("5"),
+  queueLimit: zodNumber.default("5"),
+  queueDuration: zodNumber.default("1000"),
 });
 
 const result = schema.safeParse({
@@ -17,6 +21,10 @@ const result = schema.safeParse({
   thumborHost: process.env.THUMBOR_HOST,
   thumborPort: process.env.THUMBOR_PORT,
   tornadoHost: process.env.TORNADO_HOST,
+  workerConcurrency: process.env.WORKER_CONCURRENCY,
+  jobAttempts: process.env.JOB_ATTEMPTS,
+  queueLimit: process.env.QUEUE_LIMIT,
+  queueDuration: process.env.QUEUE_DURATION,
 });
 
 if (!result.success) {

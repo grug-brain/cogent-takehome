@@ -2,6 +2,7 @@ import { Job, Queue, Worker } from "bullmq";
 import express from "express";
 import { v4 as uuid } from "uuid";
 import { env } from "./env";
+import { logger } from "./logger";
 import { connection } from "./redis";
 
 type ThumbnailJob = {
@@ -24,6 +25,7 @@ app.locals.createJob = async (body, contentType) => {
     { body, contentType },
     {
       jobId: uuid(),
+      attempts: env.jobAttempts,
     }
   );
 
@@ -57,10 +59,16 @@ new Worker(
   {
     autorun: true,
     connection,
+    concurrency: env.workerConcurrency,
+    limiter: {
+      max: env.queueLimit,
+      duration: env.queueDuration,
+    },
   }
 );
 
 app
+  .use(logger)
   .use(express.raw({ type: "*/*", limit: "2mb" }))
   .get("/health", (req, res) => res.send(200))
   .post("/job", async (req, res) => {
